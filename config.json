@@ -1,0 +1,20 @@
+{
+    "pageSettings": {
+        "url": "https://www.google.com",
+        "selector": "h3",
+        "interval": 10
+    },
+    "gmail": {
+        "client_id": "...",
+        "project_id": "Oberserver - ...",
+        "auth_uri": "...",
+        "token_uri": "...",
+        "auth_provider_x509_cert_url": "...",
+        "client_secret": "...",
+        "redirect_uris": [
+            "..."
+        ]
+    },
+    "email": "target email",
+    "subject": "email subject"
+}
