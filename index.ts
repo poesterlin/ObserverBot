@@ -9,7 +9,7 @@ let lastSeenHash: string[] = [];
 let browser: puppeteer.Browser, page: puppeteer.Page;
 
 async function setup() {
-    browser = await puppeteer.launch();
+    browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']});
     page = await browser.newPage();
     await page.goto(pageSettings.url);
 }
