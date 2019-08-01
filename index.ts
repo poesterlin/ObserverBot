@@ -2,13 +2,14 @@
 import puppeteer from 'puppeteer';
 import { pageSettings } from './config.json';
 import hash from 'object-hash';
-import { writeEmail } from './gmail.js';
+import { writeEmail, authorize } from './gmail.js';
 
 let lastSeenHash: string[] = [];
 
 let browser: puppeteer.Browser, page: puppeteer.Page;
 
 async function setup() {
+    await authorize();
     browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']});
     page = await browser.newPage();
     await page.goto(pageSettings.url);
@@ -17,16 +18,17 @@ async function setup() {
 async function run() {
     await page.reload();
     const els = await page.$$(pageSettings.selector);
-
     const found: string[] = [];
 
     for (const el of els) {
         const text: string = await page.evaluate(element => element.innerText, el);
-        const h = hash.sha1(text.trim());
-
+        const link = await page.evaluate(element => element.children[2].href, el);
+        const comb = `<a href="${link}">${text.trim()}</a> <br>`
+        const h = hash.sha1(comb);
+        
         if (!lastSeenHash.includes(h)) {
             lastSeenHash.push(h);
-            found.push(text.trim());
+            found.push(comb);
         }
 
         el.dispose();
@@ -34,21 +36,20 @@ async function run() {
 
     if (found.length > 0) {
         await notify(found.join("\n"), pageSettings.url);
-    } else {
-        console.log("nothing", lastSeenHash);
     }
 };
 
 
 async function notify(text: string, link: string) {
-    await writeEmail(`${text} <br> <a href="${link}"> link </a>`);
+    await writeEmail(`${text} <br> <a href="${link}"> go to overview </a>`);
 }
 
 setup().then(() => {
+    run();
     setInterval(run, pageSettings.interval * 1000);
 })
 
-process.addListener('beforeExit', async () => {
+process.on('exit', async () => {
     await browser.close();
     console.log('closed');
 });
