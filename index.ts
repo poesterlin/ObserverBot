@@ -10,7 +10,7 @@ let browser: puppeteer.Browser, page: puppeteer.Page;
 
 async function setup() {
     await authorize();
-    browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']});
+    browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     page = await browser.newPage();
     await page.goto(pageSettings.url);
 }
@@ -25,7 +25,7 @@ async function run() {
         const link = await page.evaluate(element => element.children[2].href, el);
         const comb = `<a href="${link}">${text.trim()}</a> <br>`
         const h = hash.sha1(comb);
-        
+
         if (!lastSeenHash.includes(h)) {
             lastSeenHash.push(h);
             found.push(comb);
@@ -36,6 +36,8 @@ async function run() {
 
     if (found.length > 0) {
         await notify(found.join("\n"), pageSettings.url);
+    } else {
+        console.log('no updates found');
     }
 };
 

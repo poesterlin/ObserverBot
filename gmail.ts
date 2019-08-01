@@ -34,15 +34,15 @@ export async function writeEmail(text: string) {
 
     if (process.env.NODE_ENV === 'production') {
         gmail.users.messages.send({
-            auth: auth,
             userId: 'me',
+            auth,
             requestBody: { raw },
         }, (err) => {
             if (err) console.error(err); else console.log('sent email');
         });
     } else {
         console.log('didnt sent email');
-        console.log(Buffer.from(raw, "base64").toString());
+        console.log(base64url.decode(text));
     }
 }
 
