@@ -17,12 +17,13 @@ async function setup() {
 
 async function run() {
     await page.reload();
+    await page.waitForNavigation();
     const els = await page.$$(pageSettings.selector);
     const found: string[] = [];
 
     for (const el of els) {
         const text: string = await page.evaluate(element => element.innerText, el);
-        const link = await page.evaluate(element => element.children[2].href, el);
+        const link: string = await page.evaluate(element => element.children[2].href, el);
         const comb = `<a href="${link}">${text.trim()}</a> <br>`
         const h = hash.sha1(comb);
 
@@ -35,15 +36,15 @@ async function run() {
     }
 
     if (found.length > 0) {
-        await notify(found.join("\n"), pageSettings.url);
+        await notify(found.join("\n"));
     } else {
         console.log('no updates found');
     }
 };
 
 
-async function notify(text: string, link: string) {
-    await writeEmail(`${text} <br> <a href="${link}"> go to overview </a>`);
+async function notify(text: string) {
+    await writeEmail(`${text} <br> <a href="${pageSettings.url}"> go to overview </a>`);
 }
 
 setup().then(() => {
