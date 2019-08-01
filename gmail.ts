@@ -38,23 +38,27 @@ export async function writeEmail(text: string) {
             auth,
             requestBody: { raw },
         }, (err) => {
-            if (err) console.error(err); else console.log('sent email');
+            if (err) {
+                console.error(err);
+            } else {
+                console.log('sent email');
+            }
+
         });
     } else {
         console.log('didnt sent email');
-        console.log(base64url.decode(text));
     }
 }
 
 function makeBody(to: string, from: string, subject: string, message: string) {
-    const str = [`Content-Type: text/plain; charset="UTF-8"`,
-        "MIME-Version: 1.0",
-        "Content-Transfer-Encoding: 7bit",
-        `to:  ${to}`,
-        `from: ${from}`,
-        `subject: ${subject}`,
+    const str = [
+        `From: ${from}`,
+        `To:  ${to}`,
+        `Subject: ${subject}`,
+        `Content-Type: text/html;charset="utf-8"`,
+        "",
         message
-    ].join('\n');
+    ].join('\r\n').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
     return base64url.encode(str);
 }
