@@ -6,10 +6,16 @@ import { writeEmail } from './gmail.js';
 
 let lastSeenHash: string[] = [];
 
-async function run() {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
+let browser: puppeteer.Browser, page: puppeteer.Page;
+
+async function setup() {
+    browser = await puppeteer.launch();
+    page = await browser.newPage();
     await page.goto(pageSettings.url);
+}
+
+async function run() {
+    await page.reload();
     const els = await page.$$(pageSettings.selector);
 
     const found: string[] = [];
@@ -31,8 +37,6 @@ async function run() {
     } else {
         console.log("nothing", lastSeenHash);
     }
-
-    await browser.close();
 };
 
 
@@ -40,6 +44,16 @@ async function notify(text: string, link: string) {
     await writeEmail(`${text} <br> <a href="${link}"> link </a>`);
 }
 
-setInterval(run, pageSettings.interval * 1000);
+setup().then(() => {
+    setInterval(run, pageSettings.interval * 1000);
+})
+
+process.addListener('beforeExit', async () => {
+    await browser.close();
+    console.log('closed');
+});
+
+
+
 
 
