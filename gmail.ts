@@ -3,7 +3,7 @@ import readline from "readline";
 import { gmail } from './config.json';
 import { google } from "googleapis";
 import { email, subject } from './config.json';
-import base64url from "base64url";
+import { Base64 } from 'js-base64';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];
 
@@ -34,10 +34,9 @@ export async function writeEmail(text: string) {
 
     if (process.env.NODE_ENV === 'production') {
         gmail.users.messages.send({
-            userId: 'me',
-            auth,
+            userId: email,
             requestBody: { raw },
-        }, (err) => {
+        }, (err: any) => {
             if (err) {
                 console.error(err);
             } else {
@@ -58,9 +57,9 @@ function makeBody(to: string, from: string, subject: string, message: string) {
         `Content-Type: text/html;charset="utf-8"`,
         "",
         message
-    ].join('\r\n').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    ].join('\r\n');
 
-    return base64url.encode(str);
+    return Base64.encodeURI(str);
 }
 
 
