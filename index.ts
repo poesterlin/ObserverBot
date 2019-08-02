@@ -12,12 +12,11 @@ async function setup() {
     await authorize();
     browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     page = await browser.newPage();
-    await page.goto(pageSettings.url, {timeout: 0});
+    await page.goto(pageSettings.url, { timeout: 0 });
 }
 
 async function run() {
-    await page.reload();
-    await page.waitForNavigation();
+    await page.reload({ timeout: 0 });
     const els = await page.$$(pageSettings.selector);
     const found: string[] = [];
 
@@ -42,7 +41,6 @@ async function run() {
     }
 };
 
-
 async function notify(text: string) {
     await writeEmail(`${text} <br> <a href="${pageSettings.url}"> go to overview </a>`);
 }
@@ -50,13 +48,17 @@ async function notify(text: string) {
 setup().then(() => {
     run();
     setInterval(run, pageSettings.interval * 1000);
-})
-
-process.on('exit', async () => {
-    await browser.close();
-    console.log('closed');
 });
 
+
+if (process.listeners.length < process.getMaxListeners()) {
+    console.log('set abort listener');
+    process.once('exit', async () => {
+        if (browser)
+            await browser.close();
+        console.log('closed');
+    });
+}
 
 
 
