@@ -12,7 +12,7 @@ async function setup() {
     await authorize();
     browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     page = await browser.newPage();
-    await page.goto(pageSettings.url);
+    await page.goto(pageSettings.url, {timeout: 0});
 }
 
 async function run() {
