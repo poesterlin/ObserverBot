@@ -1,65 +1,41 @@
 
-import puppeteer from 'puppeteer';
 import { pageSettings } from './config.json';
 import hash from 'object-hash';
 import { writeEmail, authorize } from './gmail.js';
+import { parse } from 'node-html-parser';
+import * as fetch from 'node-fetch';
 
 let lastSeenHash: string[] = [];
 
-let browser: puppeteer.Browser, page: puppeteer.Page;
-
-async function setup() {
-    await authorize();
-    browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-    page = await browser.newPage();
-    await page.goto(pageSettings.url, { timeout: 0 });
-}
-
 async function run() {
-    await page.reload({ timeout: 0 });
-    const els = await page.$$(pageSettings.selector);
-    const found: string[] = [];
+    // @ts-ignore
+    const req = await fetch(pageSettings.url);
+    const html = await req.text();
+    const root: any = parse(html);
 
-    for (const el of els) {
-        const text: string = await page.evaluate(element => element.innerText, el);
-        const link: string = await page.evaluate(element => element.children[2].href, el);
-        const comb = `<a href="${link}">${text.trim()}</a> <br>`
-        const h = hash.sha1(comb);
+    const elements = root.querySelectorAll(pageSettings.selector)
+        .filter((el: any) => !lastSeenHash.includes(hash.sha1(el.structuredText)));
 
-        if (!lastSeenHash.includes(h)) {
-            lastSeenHash.push(h);
-            found.push(comb);
-        }
-
-        el.dispose();
-    }
-
-    if (found.length > 0) {
-        await notify(found.join("\n"));
+    if (elements.length > 0) {
+        const str: string[] = elements.map((el: any) => {
+            let html = "";
+            try {
+                html = el.childNodes[1].toString();
+            } catch (e) { }
+            return html.replace('href="', 'href="https://www.wg-gesucht.de/').replace(' class="detailansicht"', "");
+        });
+        notify(str.join("\n <br>"));
     } else {
         console.log('no updates found');
     }
+    lastSeenHash.push(...elements.map((t: any) => hash.sha1(t.structuredText)));
 };
 
 async function notify(text: string) {
     await writeEmail(`${text} <br> <a href="${pageSettings.url}"> go to overview </a>`);
 }
 
-setup().then(() => {
+authorize().then(() => {
     run();
     setInterval(run, pageSettings.interval * 1000);
-});
-
-
-if (process.listeners.length < process.getMaxListeners()) {
-    console.log('set abort listener');
-    process.once('exit', async () => {
-        if (browser)
-            await browser.close();
-        console.log('closed');
-    });
-}
-
-
-
-
+})
